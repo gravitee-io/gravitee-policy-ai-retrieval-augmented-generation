@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "modelName",
+    "vectorStoreName",
+    "resultsAttribute",
+    "promptExpression",
+    "promptTemplate"
+  ],
+  "properties": {
+    "modelName": {
+      "title": "Embedding model resource",
+      "type": "string",
+      "description": "The unique identifier or resource name of the embedding model to use for query and context vectorization.",
+      "gioConfig": {
+        "banner": {
+          "title": "Embedding model resource",
+          "text": "Select the embedding model to use for vector generation."
+        }
+      }
+    },
+    "vectorStoreName": {
+      "title": "Vector store resource",
+      "type": "string",
+      "description": "The name of the vector store resource used to store and retrieve indexed documents.",
+      "gioConfig": {
+        "banner": {
+          "title": "Vector store",
+          "text": "Specify the vector store to retrieve relevant documents."
+        }
+      }
+    },
+    "parameters": {
+      "type": "array",
+      "title": "Query Parameters",
+      "description": "A list of parameters that will be used as metadata for retrieval operations. Values can use Expression Language (EL).",
+      "items": {
+        "type": "object",
+        "required": ["key", "value"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Parameter name",
+            "description": "The name of the parameter to be used as a filter during vector search."
+          },
+          "value": {
+            "type": "string",
+            "title": "Parameter value",
+            "description": "The value of the parameter. You can use Expression Language (EL) for dynamic resolution."
+          },
+          "encode": {
+            "type": "boolean",
+            "title": "Encode value",
+            "description": "Whether to encode the value before indexing, typically used for sensitive information."
+          }
+        }
+      }
+    },
+    "resultsAttribute": {
+      "title": "Results attribute",
+      "type": "string",
+      "description": "The context attribute where the retrieved results will be stored after vector search. This will be used later by the prompt template.",
+      "default": "ragResults",
+      "gioConfig": {
+        "banner": {
+          "title": "Results attribute",
+          "text": "Where to store the retrieved results in context."
+        }
+      }
+    },
+    "promptExpression": {
+      "title": "Prompt expression",
+      "type": "string",
+      "description": "Expression (EL or JSONPath) used to extract the prompt from the request or context for similarity search.",
+      "default": "{#jsonPath(#request.content, '$.messages[-1:].content')}",
+      "gioConfig": {
+        "banner": {
+          "title": "Prompt expression",
+          "text": "Where to extract the question for vector search."
+        }
+      }
+    },
+    "promptTemplate": {
+      "title": "Prompt template",
+      "type": "string",
+      "format": "gio-code-editor",
+      "description": "The prompt template used to guide the language model's generation. You can use EL syntax to include dynamic data such as questions or retrieved context.",
+      "default": "Answer this question to the best of your abilities: \n\n\tQuestion: {#jsonPath(#request.content, '$.messages[-1:].content')}\n\nUse the information below to construct your answer: \n\n\tInformation: {#context.attributes['ragResults'][0]['content']}\n\nIf no information was submitted, just answer you do not know.",
+      "gioConfig": {
+        "banner": {
+          "title": "Prompt template",
+          "text": "Define how the model should respond using a custom template."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an AI assistant that tells jokes."
+    },
+    {
+      "role": "user",
+      "content": "Tell me a joke!"
+    },
+    {
+      "role": "assistant",
+      "content": "What do people say about their trousers from the south of france ? They are Toulouse !"
+    },
+    {
+      "role": "user",
+      "content": "Hahaha! Another one!"
+    }
+  ],
+  "max_tokens": 800,
+  "temperature": 0.7,
+  "frequency_penalty": 0,
+  "presence_penalty": 0,
+  "top_p": 0.95,
+  "stop": null
+}

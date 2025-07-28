@@ -1,0 +1,101 @@
+{
+  "id": "my-api-get",
+  "name": "my-api",
+  "gravitee": "2.0.0",
+  "proxy": {
+    "context_path": "/openai",
+    "endpoints": [
+      {
+        "name": "default",
+        "target": "http://localhost:8080/openai",
+        "http": {
+          "connectTimeout": 3000,
+          "readTimeout": 60000
+        }
+      }
+    ]
+  },
+  "flows": [
+    {
+      "name": "flow-1",
+      "methods": [],
+      "enabled": true,
+      "path-operator": {
+        "path": "/",
+        "operator": "STARTS_WITH"
+      },
+      "pre": [
+        {
+          "name": "AI Context Caching",
+          "description": "",
+          "enabled": true,
+          "policy": "ai-semantic-caching",
+          "configuration": {
+            "modelName": "ai-model-text-embedding-resource",
+            "vectorStoreName": "vector-store-redis-resource",
+            "parameters": [
+              {
+                "key": "retrieval_context_key",
+                "value": "{#context.attributes['api']}_{#context.attributes['plan']}_{#context.attributes['user-id']}",
+                "encode": true
+              }
+            ]
+          }
+        }
+      ],
+      "post": []
+    }
+  ],
+  "resources": [
+    {
+      "name": "ai-model-text-embedding-resource",
+      "type": "ai-model-text-embedding",
+      "configuration": {
+        "model": {
+          "type": "XENOVA_ALL_MINILM_L6_V2"
+        },
+        "poolingMode": "MEAN",
+        "padding": false
+      },
+      "enabled": true
+    },
+    {
+      "name": "vector-store-redis-resource",
+      "type": "ai-vector-store-redis",
+      "configuration": {
+        "properties": {
+          "embeddingSize": 384,
+          "maxResults": 5,
+          "similarity": "COSINE",
+          "threshold": 0.3,
+          "indexType": "HNSW",
+          "readOnly": false,
+          "allowEviction": true,
+          "evictTime": 10,
+          "evictTimeUnit": "SECONDS"
+        },
+        "redisConfig": {
+          "url": "redis://localhost:62848",
+          "username": "default",
+          "password": "defaultpass",
+          "index": "redis_index",
+          "prefix": "redis_prefix",
+          "query": "@retrieval_context_key:{\n\t$retrieval_context_key\n}=>[\n\tKNN $max_results @vector $vector AS similarity_score\n]",
+          "scoreField": "similarity_score",
+          "maxTimeOut": "similarity_score",
+          "maxPoolSize": 6,
+          "vectorStoreConfig": {
+            "vectorType": "FLOAT64",
+            "M": 10,
+            "efConstruction": 200,
+            "efRuntime": 10,
+            "epsilon": 0.01,
+            "initialCapacity": 5,
+            "blockSize": 10
+          }
+        }
+      },
+      "enabled": true
+    }
+  ]
+}
