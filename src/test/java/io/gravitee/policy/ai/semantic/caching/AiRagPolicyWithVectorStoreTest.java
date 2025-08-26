@@ -22,17 +22,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
-import com.github.tomakehurst.wiremock.matching.EqualToPattern;
 import io.gravitee.apim.gateway.tests.sdk.AbstractPolicyTest;
 import io.gravitee.apim.gateway.tests.sdk.annotations.DeployApi;
 import io.gravitee.apim.gateway.tests.sdk.annotations.GatewayTest;
+import io.gravitee.apim.gateway.tests.sdk.policy.PolicyBuilder;
 import io.gravitee.inference.service.InferenceService;
+import io.gravitee.plugin.core.api.PluginManifest;
+import io.gravitee.plugin.policy.PolicyPlugin;
 import io.gravitee.plugin.resource.ResourcePlugin;
 import io.gravitee.policy.ai.rag.AiRagPolicy;
 import io.gravitee.policy.ai.rag.configuration.AiRagPolicyConfiguration;
+import io.gravitee.policy.ai.rag.resource.AiTestVectorStoreResource;
 import io.gravitee.policy.ai.rag.resource.FakeAiModelTextEmbeddingResourcePlugin;
-import io.gravitee.policy.ai.rag.resource.FakeRedisVectorStoreResourcePlugin;
-import io.reactivex.rxjava3.core.Completable;
+import io.gravitee.policy.ai.rag.resource.FakeAiVectorStoreResourcePlugin;
+import io.gravitee.policy.assigncontent.AssignContentPolicy;
+import io.gravitee.policy.assigncontent.configuration.AssignContentPolicyConfiguration;
 import io.reactivex.rxjava3.core.Flowable;
 import io.vertx.rxjava3.core.Vertx;
 import io.vertx.rxjava3.core.buffer.Buffer;
@@ -45,7 +49,6 @@ import java.util.concurrent.TimeUnit;
 import lombok.SneakyThrows;
 import org.assertj.core.util.Files;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -53,25 +56,28 @@ import org.testcontainers.utility.DockerImageName;
  * @author GraviteeSource Team
  */
 @GatewayTest
-public class AiRagPolicyWithRedisVectorStoreTest
+public class AiRagPolicyWithVectorStoreTest
   extends AbstractPolicyTest<AiRagPolicy, AiRagPolicyConfiguration> {
-
-  static final GenericContainer<?> REDIS = new GenericContainer<>(
-    DockerImageName.parse("redis/redis-stack:latest")
-  )
-    .withExposedPorts(6379)
-    .withEnv("REDIS_ARGS", "--requirepass defaultpass")
-    .withCreateContainerCmdModifier(cmd ->
-      cmd.withPortBindings(
-        new PortBinding(Ports.Binding.bindPort(62848), new ExposedPort(6379))
-      )
-    );
 
   private static InferenceService inferenceService;
 
   @BeforeAll
-  public static void setUp() {
-    REDIS.start();
+  public static void setUp() {}
+
+  @Override
+  public void loadPolicy(
+    PluginManifest manifest,
+    Map<String, PolicyPlugin> policies
+  ) {
+    super.loadPolicy(manifest, policies);
+    policies.put(
+      AssignContentPolicy.PLUGIN_ID,
+      PolicyBuilder.build(
+        "policy-assign-content",
+        AssignContentPolicy.class,
+        AssignContentPolicyConfiguration.class
+      )
+    );
   }
 
   @Override
@@ -90,12 +96,9 @@ public class AiRagPolicyWithRedisVectorStoreTest
     );
     resources.put(
       "ai-vector-store-redis",
-      new FakeRedisVectorStoreResourcePlugin()
+      new FakeAiVectorStoreResourcePlugin()
     );
   }
-
-  @BeforeEach
-  public void start() {}
 
   @Test
   @DisplayName("Must retrieve similar elements from the request")
@@ -115,22 +118,14 @@ public class AiRagPolicyWithRedisVectorStoreTest
 
     Flowable
       .timer(5, TimeUnit.SECONDS)
-      .flatMap(__ ->
-        requestToLlm(client, input)
-          .ignoreElements()
-          .andThen(Completable.timer(2, TimeUnit.SECONDS))
-          .andThen(requestToLlm(client, input))
-      )
+      .flatMap(__ -> requestToLlm(client, input).map(Buffer::toString))
       .test()
       .await()
       .assertComplete()
       .assertNoErrors();
 
-    wiremock.verify(
-      1,
-      postRequestedFor(urlPathEqualTo("/openai/v1/chat/completions"))
-        .withRequestBody(new EqualToPattern(input))
-    );
+    assertThat(AiTestVectorStoreResource.INSTANCE.foundRelevant).isTrue();
+    //TODO: find a way to verify the content has been put in the context.attributes
   }
 
   private static Flowable<Buffer> requestToLlm(
@@ -168,6 +163,5 @@ public class AiRagPolicyWithRedisVectorStoreTest
     if (inferenceService != null) {
       inferenceService.stop();
     }
-    REDIS.stop();
   }
 }

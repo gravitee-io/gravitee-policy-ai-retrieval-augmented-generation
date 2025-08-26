@@ -1,5 +1,5 @@
 {
-  "id": "my-api-get",
+  "id": "my-api-post",
   "name": "my-api",
   "gravitee": "2.0.0",
   "proxy": {
@@ -26,20 +26,27 @@
       },
       "pre": [
         {
-          "name": "AI Context Caching",
+          "name": "AI RAG Query",
           "description": "",
           "enabled": true,
-          "policy": "ai-semantic-caching",
+          "policy": "ai-retrieval-augmented-generation",
           "configuration": {
             "modelName": "ai-model-text-embedding-resource",
             "vectorStoreName": "vector-store-redis-resource",
-            "parameters": [
-              {
-                "key": "retrieval_context_key",
-                "value": "{#context.attributes['api']}_{#context.attributes['plan']}_{#context.attributes['user-id']}",
-                "encode": true
-              }
-            ]
+            "resultsAttribute": "rag",
+            "promptExpression": "{#jsonPath(#request.content, '$.messages[-1:].content')}",
+            "promptTemplate": "Answer this question to the best of your abilities: \n\n\tQuestion: {#request.content}\n\nUse the information below to construct your answer: \n\n\tInformation: {#context.attributes['rag'][0]['content']}\n\nIf no information was submitted, just answer you do not know.",
+            "parameters": []
+          }
+        },
+        {
+          "name": "Set Body Content",
+          "description": "",
+          "enabled": true,
+          "policy": "policy-assign-content",
+          "configuration": {
+            "scope": "REQUEST",
+            "body": "{#context.attributes['rag'][0]['content']}"
           }
         }
       ],
@@ -69,8 +76,8 @@
           "similarity": "COSINE",
           "threshold": 0.3,
           "indexType": "HNSW",
-          "readOnly": false,
-          "allowEviction": true,
+          "readOnly": true,
+          "allowEviction": false,
           "evictTime": 10,
           "evictTimeUnit": "SECONDS"
         },
@@ -85,7 +92,7 @@
           "maxTimeOut": "similarity_score",
           "maxPoolSize": 6,
           "vectorStoreConfig": {
-            "vectorType": "FLOAT64",
+            "vectorType": "FLOAT32",
             "M": 10,
             "efConstruction": 200,
             "efRuntime": 10,

@@ -49,6 +49,8 @@
         <!-- Property used by the publication job in CI-->
         <publish-folder-path>graviteeio-apim/apim/plugins/policies</publish-folder-path>
         <testcontainers-redis.version>2.2.2</testcontainers-redis.version>
+        <gravitee-inference-onnx.version>1.1.2</gravitee-inference-onnx.version>
+        <gravitee-policy-assign-content.version>2.0.1</gravitee-policy-assign-content.version>
     </properties>
 
     <dependencyManagement>
@@ -156,6 +158,13 @@
         </dependency>
 
         <dependency>
+            <groupId>io.gravitee.inference.onnx</groupId>
+            <artifactId>gravitee-inference-onnx</artifactId>
+            <version>${gravitee-inference-onnx.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>io.gravitee.resource</groupId>
             <artifactId>gravitee-resource-ai-model-text-embedding</artifactId>
             <version>${gravitee-resource-ai-model-text-embedding.version}</version>
@@ -184,9 +193,10 @@
         </dependency>
 
         <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-core</artifactId>
-            <version>4.5.13</version>
+            <groupId>io.gravitee.policy</groupId>
+            <artifactId>gravitee-policy-assign-content</artifactId>
+            <version>${gravitee-policy-assign-content.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -261,6 +271,7 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
 </project>

@@ -21,6 +21,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 import io.gravitee.el.TemplateEngine;
+import io.gravitee.gateway.api.buffer.Buffer;
 import io.gravitee.gateway.reactive.api.context.http.HttpPlainExecutionContext;
 import io.gravitee.gateway.reactive.api.policy.http.HttpPolicy;
 import io.gravitee.policy.ai.rag.configuration.AiRagPolicyConfiguration;
@@ -47,7 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AiRagPolicy implements HttpPolicy {
 
-  private static final String AI_RAG = "ai-retrieval-augmented-generation";
+  public static final String AI_RAG = "ai-retrieval-augmented-generation";
   private static final Collector<Entry<String, Object>, ?, Map<String, Object>> MAP_COLLECTOR =
     toMap(Entry::getKey, Entry::getValue, (v1, v2) -> v2);
 
@@ -99,7 +100,7 @@ public class AiRagPolicy implements HttpPolicy {
     return getExpression(ctx, this.promptTemplate)
       .concatMapCompletable(prompt -> {
         ctx.putAttribute(
-          this.resultsAttribute + "_" + "prompt",
+          this.resultsAttribute + "." + "prompt",
           Json.encode(prompt)
         );
         return Completable.complete();
@@ -123,14 +124,18 @@ public class AiRagPolicy implements HttpPolicy {
       .invokeModel(content)
       .flatMap(embeddingResult ->
         getMetadata(ctx.getTemplateEngine())
-          .flatMap(metadata -> {
-            var v = new VectorEntity(
-              content.promptContent(),
-              embeddingResult.embeddings(),
-              metadata
-            );
-            return resourceProvider.vectorStore(ctx).findRelevant(v).toList();
-          })
+          .flatMap(metadata ->
+            resourceProvider
+              .vectorStore(ctx)
+              .findRelevant(
+                new VectorEntity(
+                  content.promptContent(),
+                  embeddingResult.embeddings(),
+                  metadata
+                )
+              )
+              .toList()
+          )
       );
   }
 

@@ -27,12 +27,12 @@ import java.nio.file.Path;
  * @author Rémi SULTAN (remi.sultan at graviteesource.com)
  * @author GraviteeSource Team
  */
-public class FakeRedisVectorStoreResourcePlugin
+public class FakeAiVectorStoreResourcePlugin
   implements ResourcePlugin<AiVectorStoreRedisConfiguration> {
 
   @Override
   public Class<? extends Resource> resource() {
-    return AiVectorStoreRedisResource.class;
+    return AiTestVectorStoreResource.class;
   }
 
   @Override
@@ -47,7 +47,7 @@ public class FakeRedisVectorStoreResourcePlugin
 
   @Override
   public String clazz() {
-    return AiVectorStoreRedisResource.class.getCanonicalName();
+    return AiTestVectorStoreResource.class.getCanonicalName();
   }
 
   @Override

@@ -14,7 +14,7 @@
     },
     {
       "role": "user",
-      "content": "Hahaha! Another one!"
+      "content": "The fox jumps over the dog"
     }
   ],
   "max_tokens": 800,
