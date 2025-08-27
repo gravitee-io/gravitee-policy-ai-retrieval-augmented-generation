@@ -19,9 +19,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static io.vertx.core.http.HttpMethod.POST;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.api.model.Ports;
 import io.gravitee.apim.gateway.tests.sdk.AbstractPolicyTest;
 import io.gravitee.apim.gateway.tests.sdk.annotations.DeployApi;
 import io.gravitee.apim.gateway.tests.sdk.annotations.GatewayTest;
@@ -49,7 +46,6 @@ import java.util.concurrent.TimeUnit;
 import lombok.SneakyThrows;
 import org.assertj.core.util.Files;
 import org.junit.jupiter.api.*;
-import org.testcontainers.utility.DockerImageName;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
