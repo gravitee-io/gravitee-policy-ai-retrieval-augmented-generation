@@ -15,6 +15,7 @@
  */
 package io.gravitee.policy.ai.rag.resource;
 
+import io.gravitee.gateway.reactive.api.context.http.HttpBaseExecutionContext;
 import io.gravitee.gateway.reactive.api.context.http.HttpPlainExecutionContext;
 import io.gravitee.policy.ai.rag.configuration.AiRagPolicyConfiguration;
 import io.gravitee.resource.ai.vector.store.api.AiVectorStoreResource;
@@ -29,14 +30,14 @@ import io.gravitee.resource.api.ResourceManager;
  */
 public record ResourceProvider(AiRagPolicyConfiguration configuration) {
   public AiTextModelResource<?, ?, EmbeddingResult> aiTextEmbeddingModel(
-    HttpPlainExecutionContext ctx
+    HttpBaseExecutionContext ctx
   ) {
     return ctx
       .getComponent(ResourceManager.class)
       .getResource(configuration.modelName(), AiTextModelResource.class);
   }
 
-  public VectorStore vectorStore(HttpPlainExecutionContext ctx) {
+  public VectorStore vectorStore(HttpBaseExecutionContext ctx) {
     return ctx
       .getComponent(ResourceManager.class)
       .getResource(

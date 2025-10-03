@@ -22,6 +22,8 @@ import static java.util.stream.Collectors.toMap;
 
 import io.gravitee.el.TemplateEngine;
 import io.gravitee.gateway.api.buffer.Buffer;
+import io.gravitee.gateway.reactive.api.context.http.HttpBaseExecutionContext;
+import io.gravitee.gateway.reactive.api.context.http.HttpMessageExecutionContext;
 import io.gravitee.gateway.reactive.api.context.http.HttpPlainExecutionContext;
 import io.gravitee.gateway.reactive.api.policy.http.HttpPolicy;
 import io.gravitee.policy.ai.rag.configuration.AiRagPolicyConfiguration;
@@ -40,6 +42,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collector;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.C;
 
 /**
  * @author Rémi SULTAN (remi.sultan at graviteesource.com)
@@ -75,6 +78,15 @@ public class AiRagPolicy implements HttpPolicy {
 
   @Override
   public Completable onRequest(HttpPlainExecutionContext ctx) {
+    return getRequest(ctx);
+  }
+
+  @Override
+  public Completable onMessageRequest(HttpMessageExecutionContext ctx) {
+    return getRequest(ctx);
+  }
+
+  private Completable getRequest(HttpBaseExecutionContext ctx) {
     return findRelevant(ctx)
       .concatMapCompletable(results -> this.storeResults(ctx, results))
       .doOnError(t ->
@@ -88,7 +100,7 @@ public class AiRagPolicy implements HttpPolicy {
   }
 
   private Completable storeResults(
-    HttpPlainExecutionContext ctx,
+    HttpBaseExecutionContext ctx,
     List<VectorResult> results
   ) {
     var collect = results
@@ -107,16 +119,14 @@ public class AiRagPolicy implements HttpPolicy {
       });
   }
 
-  private Maybe<List<VectorResult>> findRelevant(
-    HttpPlainExecutionContext ctx
-  ) {
+  private Maybe<List<VectorResult>> findRelevant(HttpBaseExecutionContext ctx) {
     return getExpression(ctx, this.promptExpression)
       .map(PromptInput::new)
       .flatMapSingle(content -> this.findRelevant(ctx, content));
   }
 
   private Single<List<VectorResult>> findRelevant(
-    HttpPlainExecutionContext ctx,
+    HttpBaseExecutionContext ctx,
     PromptInput content
   ) {
     return resourceProvider
@@ -166,7 +176,7 @@ public class AiRagPolicy implements HttpPolicy {
   }
 
   private Maybe<String> getExpression(
-    HttpPlainExecutionContext ctx,
+    HttpBaseExecutionContext ctx,
     String expression
   ) {
     return ctx.getTemplateEngine().eval(expression, String.class);
