@@ -49,7 +49,7 @@
         <!-- Property used by the publication job in CI-->
         <publish-folder-path>graviteeio-apim/apim/plugins/policies</publish-folder-path>
         <gravitee-inference-onnx.version>1.1.2</gravitee-inference-onnx.version>
-        <gravitee-policy-assign-content.version>2.0.1</gravitee-policy-assign-content.version>
+        <gravitee-policy-assign-content.version>3.1.1</gravitee-policy-assign-content.version>
     </properties>
 
     <dependencyManagement>
